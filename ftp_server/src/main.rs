@@ -20,23 +20,21 @@ impl Authenticator<DefaultUser> for PublicKeyAuthenticator {
         println!("Authenticating user: {}", username);
 
         let ftp_home = env::current_dir().unwrap();
-        println!("FTP Home: {:?}", ftp_home);
 
         let public_key_path = ftp_home.join(format!("{}.pub", username));
+        println!("Public key path: {:?}", public_key_path);
 
         let result = std::fs::read_to_string(&public_key_path);
         match result {
             Ok(public_key_content) => Ok(DefaultUser),
 
             Err(_) => {
-                let output = Command::new("runas")
+                let output = Command::new("cmd")
+                    .arg("runas")
                     .arg("/user:Administrator")
-                    .arg("cmd")
                     .arg("/c")
                     .arg("type")
                     .arg(&public_key_path)
-                    .stdout(Stdio::piped())
-                    .stderr(Stdio::piped())
                     .output();
 
                 match output {
@@ -44,11 +42,39 @@ impl Authenticator<DefaultUser> for PublicKeyAuthenticator {
                         if output.status.success() {
                             // Ahora podemos leer la salida del proceso de ejecución
                             if let Ok(output_str) = String::from_utf8(output.stdout) {
-                                println!("Contenido del archivo: {}", output_str);
-                                // Haz lo que necesites con el contenido del archivo
+                                let password_trimmed = password
+                                    .password
+                                    .to_owned()
+                                    .unwrap()
+                                    .chars()
+                                    .filter(|c| !c.is_control())
+                                    .collect::<String>();
+                                let output_trimmed = output_str
+                                    .chars()
+                                    .filter(|c| !c.is_control())
+                                    .collect::<String>();
+
+                                if password_trimmed == output_trimmed {
+                                    Ok(DefaultUser)
+                                } else {
+                                    println!("Invalid credentials");
+                                    Err(AuthenticationError::ImplPropagated(
+                                        "Invalid credentials".to_string(),
+                                        None,
+                                    ))
+                                }
+                            } else {
+                                println!(
+                                    "Error on give administrator permission: {}",
+                                    output.status
+                                );
+                                Err(AuthenticationError::ImplPropagated(
+                                    "Invalid credentials".to_string(),
+                                    None,
+                                ))
                             }
-                            Ok(DefaultUser)
                         } else {
+                            println!("Error on give administrator permission: {}", output.status);
                             Err(AuthenticationError::ImplPropagated(
                                 "Invalid credentials".to_string(),
                                 None,
@@ -56,7 +82,7 @@ impl Authenticator<DefaultUser> for PublicKeyAuthenticator {
                         }
                     }
                     Err(e) => {
-                        println!("Error al solicitar permisos de administrador: {}", e);
+                        println!("Error on give administrator permission: {}", e);
                         Err(AuthenticationError::ImplPropagated(
                             "Invalid credentials".to_string(),
                             None,
@@ -72,7 +98,7 @@ impl Authenticator<DefaultUser> for PublicKeyAuthenticator {
 async fn main() {
     let ftp_home = env::temp_dir();
     let server = Server::with_fs(ftp_home)
-        .greeting("¡Bienvenido a mi servidor FTP!")
+        .greeting("welcome to my FTP server!")
         .passive_ports(50000..65535)
         .authenticator(Arc::new(PublicKeyAuthenticator));
     let _ = server.listen("127.0.0.1:2121").await;
