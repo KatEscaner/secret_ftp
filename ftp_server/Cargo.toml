@@ -6,3 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+async-trait = "0.1.50"
+libunftp = "0.19.1"
+unftp-sbe-fs = "0.2.0"
+tokio = { version = "1", features = ["full"] }
+rsa = "0.9.6"
