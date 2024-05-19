@@ -36,3 +36,33 @@ pub async fn login(
     println!("{}", login_response);
     return Ok(login_response);
 }
+
+pub async fn list_files(stream: &mut TcpStream) -> Result<String, Box<dyn Error>> {
+    send_command(stream, "PASV\r\n").await;
+    let pasv_response = get_response(stream).await;
+
+    let (ip, port) = parse_pasv_response(&pasv_response)?;
+
+    let mut data_stream = TcpStream::connect(format!("{}:{}", ip, port)).await?;
+
+    send_command(stream, "LIST\r\n").await;
+
+    let files = get_response(&mut data_stream).await;
+
+    // Cierra la conexión de datos
+    drop(data_stream);
+
+    Ok(files)
+}
+
+fn parse_pasv_response(response: &str) -> Result<(String, u16), Box<dyn Error>> {
+    let start = response.find('(').ok_or("Invalid PASV response")? + 1;
+    let end = response.rfind(')').ok_or("Invalid PASV response")?;
+    let fields: Vec<&str> = response[start..end].split(',').collect();
+
+    let ip = format!("{}.{}.{}.{}", fields[0], fields[1], fields[2], fields[3]);
+
+    let port = (fields[4].parse::<u16>()? << 8) + fields[5].parse::<u16>()?;
+
+    Ok((ip, port))
+}

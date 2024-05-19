@@ -51,8 +51,8 @@ impl Authenticator<DefaultUser> for PublicKeyAuthenticator {
 
 #[tokio::main]
 async fn main() {
-    let ftp_home = env::temp_dir();
-    let server = Server::with_fs(ftp_home)
+    let ftp_home = env::current_dir().unwrap().join("resources");
+    let server: Server<unftp_sbe_fs::Filesystem, DefaultUser> = Server::with_fs(ftp_home)
         .greeting("welcome to my FTP server!")
         .passive_ports(50000..65535)
         .authenticator(Arc::new(PublicKeyAuthenticator));
