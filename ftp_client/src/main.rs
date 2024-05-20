@@ -76,9 +76,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 Commands::Help => {
                     println!("Available commands:");
                     println!("  list - List files on the server");
-                    println!(
-                        "  upload [filename] [content] - Upload a file with specified content"
-                    );
+                    println!("  upload [path] - Upload a file with specified content");
                     println!("  download [filename] - Download a file from the server");
                     println!("  delete [filename] - Delete a file from the server");
                     println!("  quit - Quit the FTP client");

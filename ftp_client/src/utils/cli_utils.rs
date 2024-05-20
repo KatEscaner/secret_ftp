@@ -1,6 +1,8 @@
 use clap::Parser;
 use clap_derive::Parser;
 
+use super::fs_utils::{check_if_file_exists, get_file};
+
 #[derive(Parser)]
 #[command(name = "FTP Client")]
 #[command(about = "A simple FTP client to connect, authenticate, and perform file operations", long_about = None)]
@@ -33,11 +35,18 @@ impl Commands {
             "upload" => {
                 if let Some(argument) = argument {
                     let mut split = argument.splitn(2, ' ');
-                    let filename = split.next()?.to_string();
-                    let content = split.next()?.to_string();
-                    Some(Commands::Upload { filename, content })
+                    let path = split.next()?.to_string();
+                    if !check_if_file_exists(path.clone()) {
+                        println!("File does not exist.");
+                        return None;
+                    }
+                    let content: String = get_file(path.clone());
+                    Some(Commands::Upload {
+                        filename: path,
+                        content,
+                    })
                 } else {
-                    println!("No filename or content provided.");
+                    println!("No path provided.");
                     None
                 }
             }

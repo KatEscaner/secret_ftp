@@ -73,8 +73,7 @@ pub async fn upload_file(
     data_stream.write_all(content).await?;
     data_stream.flush().await?;
 
-    let final_response = get_response(stream).await;
-    Ok(final_response)
+    Ok("Upload successful".to_string())
 }
 
 pub async fn download_file(
