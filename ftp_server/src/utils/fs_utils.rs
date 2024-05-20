@@ -3,7 +3,6 @@ use std::{env, io::ErrorKind, process::Command};
 pub fn get_public_key(username: &str) -> Result<String, ErrorKind> {
     let root = env::current_dir().unwrap();
     let public_key_path = root.join(format!("keys\\{}.pem", &username));
-    println!("Public key path: {:?}", public_key_path);
     let result = std::fs::read_to_string(&public_key_path);
     match result {
         Ok(public_key_content) => Ok(public_key_content),
