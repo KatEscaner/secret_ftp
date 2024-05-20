@@ -9,3 +9,6 @@ edition = "2021"
 tokio = { version = "1", features = ["full"] }
 openssl = "0.10.64"
 base64 = "0.22.1"
+clap = "4.5.4"
+clap_derive = "4.5.4"
+shellwords = "1.0.0"
