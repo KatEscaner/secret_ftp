@@ -18,7 +18,7 @@ async fn send_command(stream: &mut TcpStream, command: &str) {
 
 pub async fn connect() -> Result<TcpStream, Box<dyn Error>> {
     let mut stream = TcpStream::connect("127.0.0.1:2121").await?;
-    println!("{}", get_response(&mut stream).await);
+    get_response(&mut stream).await;
     Ok(stream)
 }
 
@@ -28,18 +28,21 @@ pub async fn login(
     password: &str,
 ) -> Result<String, Box<dyn Error>> {
     send_command(stream, &format!("USER {}\r\n", username)).await;
-    println!("{}", get_response(stream).await);
+    get_response(stream).await;
 
     send_command(stream, &format!("PASS {}\r\n", password)).await;
     let login_response = get_response(stream).await;
-    println!("{}", login_response);
     Ok(login_response)
 }
 
-pub async fn list_files(
-    stream: &mut TcpStream,
-    data_stream: &mut TcpStream,
-) -> Result<String, Box<dyn Error>> {
+pub async fn list_files(stream: &mut TcpStream) -> Result<String, Box<dyn Error>> {
+    send_command(stream, "PASV\r\n").await;
+    let pasv_response = get_response(stream).await;
+
+    let (ip, port) = parse_pasv_response(&pasv_response)?;
+
+    let mut data_stream = TcpStream::connect(format!("{}:{}", ip, port)).await?;
+
     send_command(stream, "LIST\r\n").await;
 
     let mut files = String::new();
@@ -50,10 +53,16 @@ pub async fn list_files(
 
 pub async fn upload_file(
     stream: &mut TcpStream,
-    data_stream: &mut TcpStream,
     filename: &str,
     content: &[u8],
 ) -> Result<String, Box<dyn Error>> {
+    send_command(stream, "PASV\r\n").await;
+    let pasv_response = get_response(stream).await;
+
+    let (ip, port) = parse_pasv_response(&pasv_response)?;
+
+    let mut data_stream = TcpStream::connect(format!("{}:{}", ip, port)).await?;
+
     send_command(stream, &format!("STOR {}\r\n", filename)).await;
 
     let response = get_response(stream).await;
@@ -70,9 +79,15 @@ pub async fn upload_file(
 
 pub async fn download_file(
     stream: &mut TcpStream,
-    data_stream: &mut TcpStream,
     filename: &str,
 ) -> Result<Vec<u8>, Box<dyn Error>> {
+    send_command(stream, "PASV\r\n").await;
+    let pasv_response = get_response(stream).await;
+
+    let (ip, port) = parse_pasv_response(&pasv_response)?;
+
+    let mut data_stream = TcpStream::connect(format!("{}:{}", ip, port)).await?;
+
     send_command(stream, &format!("RETR {}\r\n", filename)).await;
 
     let mut content = Vec::new();
@@ -102,15 +117,4 @@ fn parse_pasv_response(response: &str) -> Result<(String, u16), Box<dyn Error>> 
     let port = (fields[4].parse::<u16>()? << 8) + fields[5].parse::<u16>()?;
 
     Ok((ip, port))
-}
-
-pub async fn get_pasv(stream: &mut TcpStream) -> Result<TcpStream, Box<dyn Error>> {
-    send_command(stream, "PASV\r\n").await;
-    let pasv_response = get_response(stream).await;
-
-    let (ip, port) = parse_pasv_response(&pasv_response).unwrap();
-
-    let data_stream = TcpStream::connect(format!("{}:{}", ip, port)).await?;
-
-    Ok(data_stream)
 }
