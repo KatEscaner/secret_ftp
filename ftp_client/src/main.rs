@@ -36,6 +36,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mut reader = BufReader::new(stdin);
     let mut input = String::new();
 
+    let mut data_stream = connection_commands::get_pasv(&mut stream).await?;
+
     loop {
         input.clear();
         println!("Enter command (list, upload, download, delete, quit, help): ");
@@ -45,12 +47,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
         if let Some(command) = Commands::from_str(input) {
             match command {
                 Commands::List => {
-                    let files = connection_commands::list_files(&mut stream).await?;
+                    let files =
+                        connection_commands::list_files(&mut stream, &mut data_stream).await?;
                     println!("Files:\n{}", files);
                 }
                 Commands::Upload { filename, content } => {
                     let response = connection_commands::upload_file(
                         &mut stream,
+                        &mut data_stream,
                         &filename,
                         content.as_bytes(),
                     )
@@ -58,8 +62,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     println!("Upload response: {}", response);
                 }
                 Commands::Download { filename } => {
-                    let content =
-                        connection_commands::download_file(&mut stream, &filename).await?;
+                    let content = connection_commands::download_file(
+                        &mut stream,
+                        &mut data_stream,
+                        &filename,
+                    )
+                    .await?;
                     println!("Downloaded content:\n{}", String::from_utf8_lossy(&content));
                 }
                 Commands::Delete { filename } => {
