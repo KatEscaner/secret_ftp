@@ -108,8 +108,8 @@ pub async fn quit(stream: &mut TcpStream) -> Result<String, Box<dyn Error>> {
 }
 
 fn parse_pasv_response(response: &str) -> Result<(String, u16), Box<dyn Error>> {
-    let start = response.find('(').ok_or("Invalid PASV response")? + 1;
-    let end = response.rfind(')').ok_or("Invalid PASV response")?;
+    let start = response.find('(').expect("Invalid PASV response") + 1;
+    let end = response.rfind(')').expect("Invalid PASV response");
     let fields: Vec<&str> = response[start..end].split(',').collect();
 
     let ip = format!("{}.{}.{}.{}", fields[0], fields[1], fields[2], fields[3]);
