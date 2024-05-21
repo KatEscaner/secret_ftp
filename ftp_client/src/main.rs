@@ -14,127 +14,12 @@ use crate::utils::cli_utils::Cli;
 use crate::utils::fs_utils::{get_file, write_file};
 use crate::utils::{
     cli_utils::{self, Commands},
-    connection_commands, fs_utils, openssl_utils,
+    connection_commands, fs_utils, openssl_utils, rocket_utils,
 };
 
-#[derive(Deserialize)]
-struct UploadData {
-    filename: String,
-    content: String,
-}
-
-#[derive(Deserialize)]
-struct UploadFileData {
-    path: String,
-}
-
-struct UserContext {
+pub struct UserContext {
     username: String,
     text_signed: String,
-}
-
-#[get("/list")]
-async fn list_files_handler(user_context: &State<Arc<Mutex<UserContext>>>) -> Json<Vec<FileEntry>> {
-    let user_context = user_context.lock().await;
-    let username = &user_context.username;
-    let text_signed = &user_context.text_signed;
-
-    let mut stream = connection_commands::connect()
-        .await
-        .map_err(|e| e.to_string())
-        .unwrap();
-
-    connection_commands::login(&mut stream, &username, &text_signed)
-        .await
-        .unwrap();
-
-    let files = connection_commands::list_files(&mut stream).await;
-    match files {
-        Ok(files) => Json(files),
-        Err(e) => {
-            eprintln!("Error listing files: {}", e);
-            Json(Vec::new())
-        }
-    }
-}
-
-#[post("/upload-file", format = "json", data = "<data>")]
-async fn upload_file_handler(
-    data: Json<UploadFileData>,
-    user_context: &State<Arc<Mutex<UserContext>>>,
-) -> Json<String> {
-    let user_context = user_context.lock().await;
-    let username = &user_context.username;
-    let text_signed = &user_context.text_signed;
-
-    let mut stream = connection_commands::connect()
-        .await
-        .map_err(|e| e.to_string())
-        .unwrap();
-
-    connection_commands::login(&mut stream, &username, &text_signed)
-        .await
-        .unwrap();
-
-    let content: String = get_file(data.path.clone());
-
-    let response =
-        connection_commands::upload_file(&mut stream, &data.path, content.as_bytes()).await;
-    match response {
-        Ok(response) => Json(response),
-        Err(e) => Json(e.to_string()),
-    }
-}
-
-#[get("/download/<filename>")]
-async fn download_file_handler(
-    filename: String,
-    user_context: &State<Arc<Mutex<UserContext>>>,
-) -> Result<Json<String>, String> {
-    let user_context = user_context.lock().await;
-    let username = &user_context.username;
-    let text_signed = &user_context.text_signed;
-
-    let mut stream = connection_commands::connect()
-        .await
-        .map_err(|e| e.to_string())?;
-
-    connection_commands::login(&mut stream, username, text_signed)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let content = connection_commands::download_file(&mut stream, &filename).await;
-    match content {
-        Ok(content) => {
-            fs_utils::write_file(filename.clone(), &content).unwrap();
-            Ok(Json(String::from_utf8_lossy(&content).to_string()))
-        }
-        Err(e) => Err(e.to_string()),
-    }
-}
-
-#[delete("/delete/<filename>")]
-async fn delete_file_handler(
-    filename: String,
-    user_context: &State<Arc<Mutex<UserContext>>>,
-) -> Result<Json<String>, String> {
-    let user_context = user_context.lock().await;
-    let username = &user_context.username;
-    let text_signed = &user_context.text_signed;
-
-    let mut stream = connection_commands::connect()
-        .await
-        .map_err(|e| e.to_string())?;
-
-    connection_commands::login(&mut stream, username, text_signed)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let response = connection_commands::delete_file(&mut stream, &filename).await;
-    match response {
-        Ok(response) => Ok(Json(response)),
-        Err(e) => Err(e.to_string()),
-    }
 }
 
 #[tokio::main]
@@ -160,10 +45,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 .mount(
                     "/",
                     routes![
-                        list_files_handler,
-                        upload_file_handler,
-                        download_file_handler,
-                        delete_file_handler
+                        rocket_utils::list_files_handler,
+                        rocket_utils::upload_file_handler,
+                        rocket_utils::download_file_handler,
+                        rocket_utils::delete_file_handler
                     ],
                 )
                 .launch()
