@@ -40,7 +40,6 @@ impl Commands {
                         println!("File does not exist.");
                         return None;
                     }
-                    let content: String = get_file(path.clone());
                     Some(Commands::UploadFile { path: path })
                 } else {
                     println!("No path provided.");
