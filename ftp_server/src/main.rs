@@ -55,6 +55,7 @@ async fn main() {
     let server: Server<unftp_sbe_fs::Filesystem, DefaultUser> = Server::with_fs(ftp_home)
         .greeting("welcome to my FTP server!")
         .passive_ports(50000..65535)
-        .authenticator(Arc::new(PublicKeyAuthenticator));
+        .authenticator(Arc::new(PublicKeyAuthenticator))
+        .ftps("server.certs", "server.key");
     let _ = server.listen("127.0.0.1:2121").await;
 }
