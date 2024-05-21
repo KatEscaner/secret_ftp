@@ -35,7 +35,20 @@ pub async fn login(
     Ok(login_response)
 }
 
-pub async fn list_files(stream: &mut TcpStream) -> Result<String, Box<dyn Error>> {
+#[derive(serde::Serialize, Debug, Clone)]
+pub struct FileEntry {
+    permissions: String,
+    links: u32,
+    owner: String,
+    group: String,
+    size: u64,
+    month: String,
+    day: u32,
+    time: String,
+    name: String,
+}
+
+pub async fn list_files(stream: &mut TcpStream) -> Result<Vec<FileEntry>, Box<dyn Error>> {
     send_command(stream, "PASV\r\n").await;
     let pasv_response = get_response(stream).await;
 
@@ -48,7 +61,32 @@ pub async fn list_files(stream: &mut TcpStream) -> Result<String, Box<dyn Error>
     let mut files = String::new();
     data_stream.read_to_string(&mut files).await?;
 
-    Ok(files)
+    let file_entries = parse_file_entries(&files)?;
+    Ok(file_entries)
+}
+
+fn parse_file_entries(list_output: &str) -> Result<Vec<FileEntry>, Box<dyn Error>> {
+    let mut entries = Vec::new();
+
+    for line in list_output.lines() {
+        let parts: Vec<&str> = line.split_whitespace().collect();
+        if parts.len() >= 9 {
+            let entry = FileEntry {
+                permissions: parts[0].to_string(),
+                links: parts[1].parse().unwrap_or(0),
+                owner: parts[2].to_string(),
+                group: parts[3].to_string(),
+                size: parts[4].parse().unwrap_or(0),
+                month: parts[5].to_string(),
+                day: parts[6].parse().unwrap_or(0),
+                time: parts[7].to_string(),
+                name: parts[8..].join(" "),
+            };
+            entries.push(entry);
+        }
+    }
+
+    Ok(entries)
 }
 
 pub async fn upload_file(

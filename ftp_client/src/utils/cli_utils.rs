@@ -17,7 +17,7 @@ pub(crate) struct Cli {
 #[derive(Parser)]
 pub enum Commands {
     List,
-    Upload { filename: String, content: String },
+    UploadFile { path: String },
     Download { filename: String },
     Delete { filename: String },
     Quit,
@@ -41,10 +41,7 @@ impl Commands {
                         return None;
                     }
                     let content: String = get_file(path.clone());
-                    Some(Commands::Upload {
-                        filename: path,
-                        content,
-                    })
+                    Some(Commands::UploadFile { path: path })
                 } else {
                     println!("No path provided.");
                     None
