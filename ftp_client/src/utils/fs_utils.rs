@@ -102,3 +102,18 @@ pub fn get_file(file_path: String) -> String {
 pub fn check_if_file_exists(file_path: String) -> bool {
     std::path::Path::new(&file_path).exists()
 }
+
+pub fn write_file(file_path: String, content: &[u8]) -> std::io::Result<()> {
+    let root = env::current_dir();
+    match root {
+        Ok(root) => {
+            let root = root.to_str().unwrap();
+            let file_path = format!("{}\\downloads\\{}", root, file_path);
+            std::fs::write(file_path, content)?;
+        }
+        Err(e) => {
+            println!("Error on get current directory: {}", e);
+        }
+    }
+    Ok(())
+}
