@@ -4,37 +4,7 @@ use tokio::io::{AsyncBufReadExt as _, AsyncWriteExt};
 use tokio::io::{AsyncReadExt, BufReader};
 use tokio::net::TcpStream;
 
-async fn get_response(stream: &mut TcpStream) -> String {
-    let mut reader = BufReader::new(stream);
-    let mut response = String::new();
-    reader.read_line(&mut response).await.unwrap();
-    response
-}
-
-async fn send_command(stream: &mut TcpStream, command: &str) {
-    stream.write_all(command.as_bytes()).await.unwrap();
-    stream.flush().await.unwrap();
-}
-
-pub async fn connect() -> Result<TcpStream, Box<dyn Error>> {
-    let mut stream = TcpStream::connect("127.0.0.1:2121").await?;
-    get_response(&mut stream).await;
-    Ok(stream)
-}
-
-pub async fn login(
-    stream: &mut TcpStream,
-    username: &str,
-    password: &str,
-) -> Result<String, Box<dyn Error>> {
-    send_command(stream, &format!("USER {}\r\n", username)).await;
-    get_response(stream).await;
-
-    send_command(stream, &format!("PASS {}\r\n", password)).await;
-    let login_response = get_response(stream).await;
-    Ok(login_response)
-}
-
+/// Represents a file entry in the FTP server's directory listing.
 #[derive(serde::Serialize, Debug, Clone)]
 pub struct FileEntry {
     permissions: String,
@@ -48,6 +18,40 @@ pub struct FileEntry {
     name: String,
 }
 
+async fn get_response(stream: &mut TcpStream) -> String {
+    let mut reader = BufReader::new(stream);
+    let mut response = String::new();
+    reader.read_line(&mut response).await.unwrap();
+    response
+}
+
+async fn send_command(stream: &mut TcpStream, command: &str) {
+    stream.write_all(command.as_bytes()).await.unwrap();
+    stream.flush().await.unwrap();
+}
+
+/// Connects to the FTP server.
+pub async fn connect() -> Result<TcpStream, Box<dyn Error>> {
+    let mut stream = TcpStream::connect("127.0.0.1:2121").await?;
+    get_response(&mut stream).await;
+    Ok(stream)
+}
+
+/// Logs into the FTP server.
+pub async fn login(
+    stream: &mut TcpStream,
+    username: &str,
+    password: &str,
+) -> Result<String, Box<dyn Error>> {
+    send_command(stream, &format!("USER {}\r\n", username)).await;
+    get_response(stream).await;
+
+    send_command(stream, &format!("PASS {}\r\n", password)).await;
+    let login_response = get_response(stream).await;
+    Ok(login_response)
+}
+
+/// Lists files on the FTP server.
 pub async fn list_files(stream: &mut TcpStream) -> Result<Vec<FileEntry>, Box<dyn Error>> {
     send_command(stream, "PASV\r\n").await;
     let pasv_response = get_response(stream).await;
@@ -89,6 +93,7 @@ fn parse_file_entries(list_output: &str) -> Result<Vec<FileEntry>, Box<dyn Error
     Ok(entries)
 }
 
+/// Uploads a file to the FTP server.
 pub async fn upload_file(
     stream: &mut TcpStream,
     path: &str,
@@ -116,6 +121,7 @@ pub async fn upload_file(
     Ok("Upload successful".to_string())
 }
 
+/// Downloads a file from the FTP server.
 pub async fn download_file(
     stream: &mut TcpStream,
     filename: &str,
@@ -135,12 +141,14 @@ pub async fn download_file(
     Ok(content)
 }
 
+/// Deletes a file from the FTP server.
 pub async fn delete_file(stream: &mut TcpStream, filename: &str) -> Result<String, Box<dyn Error>> {
     send_command(stream, &format!("DELE {}\r\n", filename)).await;
     let response = get_response(stream).await;
     Ok(response)
 }
 
+/// Sends the QUIT command to the FTP server.
 pub async fn quit(stream: &mut TcpStream) -> Result<String, Box<dyn Error>> {
     send_command(stream, "QUIT\r\n").await;
     let response = get_response(stream).await;

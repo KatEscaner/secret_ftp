@@ -9,17 +9,13 @@ use crate::UserContext;
 use super::connection_commands::{self, FileEntry};
 use super::fs_utils::{self, get_file};
 
-#[derive(Deserialize)]
-pub struct UploadData {
-    filename: String,
-    content: String,
-}
-
+/// Represents the data for uploading a file.
 #[derive(Deserialize)]
 pub struct UploadFileData {
     path: String,
 }
 
+/// Handles the request to list files.
 #[get("/list")]
 pub async fn list_files_handler(
     user_context: &State<Arc<Mutex<UserContext>>>,
@@ -47,6 +43,7 @@ pub async fn list_files_handler(
     }
 }
 
+/// Handles the request to upload a file.
 #[post("/upload-file", format = "json", data = "<data>")]
 pub async fn upload_file_handler(
     data: Json<UploadFileData>,
@@ -75,6 +72,7 @@ pub async fn upload_file_handler(
     }
 }
 
+/// Handles the request to download a file.
 #[get("/download/<filename>")]
 pub async fn download_file_handler(
     filename: String,
@@ -102,6 +100,7 @@ pub async fn download_file_handler(
     }
 }
 
+/// Handles the request to delete a file.
 #[delete("/delete/<filename>")]
 pub async fn delete_file_handler(
     filename: String,

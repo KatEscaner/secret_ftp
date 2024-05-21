@@ -17,6 +17,7 @@ use crate::utils::{
     connection_commands, fs_utils, openssl_utils, rocket_utils,
 };
 
+/// Represents the context for a user, including username and signed text.
 pub struct UserContext {
     username: String,
     text_signed: String,
@@ -24,14 +25,17 @@ pub struct UserContext {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
+    // Parse command-line arguments.
     let args = Cli::parse();
     let username = args.username.clone();
     let private_key_path = args.private_key_path;
 
+    // Read and sign the username using the private key.
     let private_key = fs_utils::get_private_key(private_key_path);
     let text_signed = openssl_utils::sign_message(&private_key, &username)?;
     let text_signed_copy = text_signed.clone();
 
+    // Create a UserContext and start the Rocket web server.
     let user_context = Arc::new(Mutex::new(UserContext {
         username,
         text_signed,
@@ -61,6 +65,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mut reader = BufReader::new(stdin);
     let mut input = String::new();
 
+    // Enter a loop to handle user commands (list, upload, download, delete, quit, help).
     loop {
         let mut stream = connection_commands::connect()
             .await

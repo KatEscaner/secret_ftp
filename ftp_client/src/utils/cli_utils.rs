@@ -3,6 +3,7 @@ use clap_derive::Parser;
 
 use super::fs_utils::{check_if_file_exists, get_file};
 
+/// Represents the command-line arguments.
 #[derive(Parser)]
 #[command(name = "FTP Client")]
 #[command(about = "A simple FTP client to connect, authenticate, and perform file operations", long_about = None)]
@@ -14,6 +15,7 @@ pub(crate) struct Cli {
     pub private_key_path: String,
 }
 
+/// Enum representing the various commands supported by the CLI.
 #[derive(Parser)]
 pub enum Commands {
     List,
@@ -25,6 +27,7 @@ pub enum Commands {
 }
 
 impl Commands {
+    /// Parses a string into a `Commands` enum.
     pub fn from_str(input: &str) -> Option<Self> {
         let mut parts = input.trim().splitn(2, ' ');
         let command = parts.next()?;

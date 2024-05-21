@@ -4,6 +4,7 @@ use openssl::rsa::Rsa;
 use openssl::sign::Signer;
 use std::error::Error;
 
+/// Signs a message using a private key.
 pub fn sign_message(private_key_pem: &str, message: &str) -> Result<String, Box<dyn Error>> {
     let rsa = Rsa::private_key_from_pem(private_key_pem.as_bytes())?;
     let pkey = PKey::from_rsa(rsa)?;
