@@ -95,7 +95,7 @@ pub async fn download_file_handler(
     let content = connection_commands::download_file(&mut stream, &filename).await;
     match content {
         Ok(content) => {
-            fs_utils::write_file(filename.clone(), &content).unwrap();
+            fs_utils::write_file_in_downloads(filename.clone(), &content).unwrap();
             Ok(Json(String::from_utf8_lossy(&content).to_string()))
         }
         Err(e) => Err(e.to_string()),

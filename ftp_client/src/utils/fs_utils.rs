@@ -1,4 +1,4 @@
-use std::{env, process::Command};
+use std::{env, fs, process::Command};
 
 pub fn get_public_key(public_key_path: String) -> String {
     let result = std::fs::read_to_string(&public_key_path);
@@ -103,16 +103,23 @@ pub fn check_if_file_exists(file_path: String) -> bool {
     std::path::Path::new(&file_path).exists()
 }
 
-pub fn write_file(file_path: String, content: &[u8]) -> std::io::Result<()> {
+pub fn write_file_in_downloads(file_path: String, content: &[u8]) -> std::io::Result<()> {
     let root = env::current_dir();
     match root {
         Ok(root) => {
             let root = root.to_str().unwrap();
-            let file_path = format!("{}\\downloads\\{}", root, file_path);
-            std::fs::write(file_path, content)?;
+            let downloads_path = format!("{}\\downloads", root);
+
+            // Verificar si el directorio 'downloads' existe, si no, crear el directorio
+            if !fs::metadata(&downloads_path).is_ok() {
+                fs::create_dir(&downloads_path)?;
+            }
+
+            let file_path = format!("{}\\{}", downloads_path, file_path);
+            fs::write(file_path, content)?;
         }
         Err(e) => {
-            println!("Error on get current directory: {}", e);
+            println!("Error getting current directory: {}", e);
         }
     }
     Ok(())
