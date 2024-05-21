@@ -3,6 +3,7 @@ use std::error::Error;
 use base64::decode;
 use openssl::{hash::MessageDigest, pkey::PKey, rsa::Rsa, sign::Verifier};
 
+/// Verify the signature of a message.
 pub fn verify_signature(
     public_key_pem: &str,
     message: &str,

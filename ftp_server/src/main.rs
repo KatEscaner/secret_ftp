@@ -9,6 +9,7 @@ use std::process::{Command, Stdio};
 use std::sync::Arc;
 use unftp_sbe_fs::ServerExt;
 
+/// This struct is used to authenticate users with public keys.
 #[derive(Debug)]
 struct PublicKeyAuthenticator;
 
@@ -17,6 +18,7 @@ use crate::utils::{fs_utils, openssl_utils};
 
 #[async_trait]
 impl Authenticator<DefaultUser> for PublicKeyAuthenticator {
+    /// Authenticate the user with the public key.
     async fn authenticate(
         &self,
         username: &str,
@@ -49,6 +51,7 @@ impl Authenticator<DefaultUser> for PublicKeyAuthenticator {
     }
 }
 
+/// This function starts the FTP server.
 #[tokio::main]
 async fn main() {
     let ftp_home = env::current_dir().unwrap().join("resources");

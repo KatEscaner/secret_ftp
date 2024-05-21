@@ -1,5 +1,6 @@
 use std::{env, io::ErrorKind, process::Command};
 
+/// Get the public key from the file system.
 pub fn get_public_key(username: &str) -> Result<String, ErrorKind> {
     let root = env::current_dir().unwrap();
     let public_key_path = root.join(format!("keys\\{}.pem", &username));
