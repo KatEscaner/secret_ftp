@@ -11,7 +11,7 @@ use utils::connection_commands::FileEntry;
 
 mod utils;
 use crate::utils::cli_utils::Cli;
-use crate::utils::fs_utils::get_file;
+use crate::utils::fs_utils::{get_file, write_file};
 use crate::utils::{
     cli_utils::{self, Commands},
     connection_commands, fs_utils, openssl_utils,
@@ -143,6 +143,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 Commands::Download { filename } => {
                     let content =
                         connection_commands::download_file(&mut stream, &filename).await?;
+                    write_file(filename.clone(), &content).unwrap();
                     println!("Downloaded content:\n{}", String::from_utf8_lossy(&content));
                 }
                 Commands::Delete { filename } => {

@@ -91,7 +91,7 @@ fn parse_file_entries(list_output: &str) -> Result<Vec<FileEntry>, Box<dyn Error
 
 pub async fn upload_file(
     stream: &mut TcpStream,
-    filename: &str,
+    path: &str,
     content: &[u8],
 ) -> Result<String, Box<dyn Error>> {
     send_command(stream, "PASV\r\n").await;
@@ -100,6 +100,8 @@ pub async fn upload_file(
     let (ip, port) = parse_pasv_response(&pasv_response)?;
 
     let mut data_stream = TcpStream::connect(format!("{}:{}", ip, port)).await?;
+
+    let filename = path.split('/').last().unwrap();
 
     send_command(stream, &format!("STOR {}\r\n", filename)).await;
 
