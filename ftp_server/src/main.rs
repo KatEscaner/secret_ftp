@@ -54,6 +54,7 @@ impl Authenticator<DefaultUser> for PublicKeyAuthenticator {
 /// This function starts the FTP server.
 #[tokio::main]
 async fn main() {
+    println!("Starting FTP server...");
     let ftp_home = env::current_dir().unwrap().join("resources");
     let server: Server<unftp_sbe_fs::Filesystem, DefaultUser> = Server::with_fs(ftp_home)
         .greeting("welcome to my FTP server!")
